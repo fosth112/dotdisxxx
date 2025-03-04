@@ -21,7 +21,7 @@ async def on_ready():
 
 @bot.command()
 @commands.has_role("resetkey")  # ให้เฉพาะ Role "resetkey" ใช้คำสั่งนี้ได้
-async def reset_hwid(ctx, license_key: str):
+async def rs(ctx, license_key: str):
     """คำสั่ง !rs <license_key> สำหรับรีเซ็ต HWID ผ่าน KeyAuth"""
     try:
         # ลบข้อความของผู้ใช้หลังจาก 10 วินาที
