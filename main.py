@@ -37,7 +37,7 @@ async def on_ready():
     print(f"✅ บอทออนไลน์แล้ว: {bot.user}")
 
 
-### 🔹 คำสั่ง `!rs` ตรวจสอบการรีซ้ำใน 7 วัน ###
+### 🔹 คำสั่ง `!rs` ที่จะลบข้อความของผู้ใช้แม้รีไม่สำเร็จ ###
 @bot.command()
 @commands.has_role("resetkey")
 async def rs(ctx, license_key: str):
@@ -53,14 +53,19 @@ async def rs(ctx, license_key: str):
         if not has_unlimited_role and license_key in reset_history:
             last_reset = datetime.fromisoformat(reset_history[license_key])
             if now - last_reset < timedelta(days=7):
+                try:
+                    await ctx.message.delete()
+                except discord.Forbidden:
+                    pass  # ถ้าลบไม่ได้ ไม่ต้องทำอะไรต่อ
+
                 await ctx.send(f"❌ คีย์ `{license_key}` ถูกรีเซ็ตไปแล้ว กรุณารออีก {7 - (now - last_reset).days} วัน", delete_after=10)
                 return
 
-        # ลบข้อความของผู้ใช้
+        # ลบข้อความของผู้ใช้เสมอ ไม่ว่าการรีเซ็ตจะสำเร็จหรือไม่
         try:
             await ctx.message.delete()
         except discord.Forbidden:
-            await ctx.send("❌ บอทไม่มีสิทธิ์ลบข้อความของคุณ!", delete_after=10)
+            pass  # ถ้าลบไม่ได้ ไม่ต้องทำอะไรต่อ
 
         # ส่งคำขอไปยัง KeyAuth API
         keyauth_url = f"https://keyauth.win/api/seller/?sellerkey={SELLER_KEY}&type=resetuser&user={license_key}"
