@@ -1,46 +1,15 @@
-import os
-import json
-import discord
-from discord.ext import commands
-import requests
-from datetime import datetime, timedelta
-from discord import app_commands
-from myserver import server_on
-
-SELLER_KEY = "87c3d5a7a8c98996b2cfb1669355406e"  # ใส่ Seller Key ของ KeyAuth
-LOG_CHANNEL_ID = 1346431603982729229  # ID ของช่องสำหรับส่ง Log
-RESET_HISTORY_FILE = "reset_history.json"  # ไฟล์เก็บข้อมูลการรีเซ็ต
-
-intents = discord.Intents.default()
-intents.message_content = True
-
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-
-def load_reset_history():
-    """โหลดข้อมูลการรีเซ็ต HWID จากไฟล์"""
-    if os.path.exists(RESET_HISTORY_FILE):
-        with open(RESET_HISTORY_FILE, "r", encoding="utf-8") as file:
-            return json.load(file)
-    return {}
-
-
-def save_reset_history(data):
-    """บันทึกข้อมูลการรีเซ็ต HWID ลงไฟล์"""
-    with open(RESET_HISTORY_FILE, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=4)
-
-
-@bot.event
-async def on_ready():
-    print(f"✅ บอทออนไลน์แล้ว: {bot.user}")
-
-
 @bot.command()
 @commands.has_role("resetkey")  # ให้เฉพาะ Role "resetkey" ใช้คำสั่งนี้ได้
 async def rs(ctx, license_key: str):
     """คำสั่ง !rs <license_key> สำหรับรีเซ็ต HWID ผ่าน KeyAuth"""
     try:
+        # ลบข้อความของผู้ใช้
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            await ctx.send("❌ บอทไม่มีสิทธิ์ลบข้อความ กรุณาตรวจสอบสิทธิ์ของบอท", delete_after=10)
+            return  # หยุดทำงานถ้าบอทไม่มีสิทธิ์
+
         # โหลดข้อมูลการรีเซ็ตจากไฟล์
         reset_history = load_reset_history()
 
@@ -52,9 +21,6 @@ async def rs(ctx, license_key: str):
                 if "ASST" not in [role.name for role in ctx.author.roles]:  # ตรวจสอบ Role
                     await ctx.send(f"❌ คีย์ `{license_key}` ถูกรีเซ็ตไปแล้ว กรุณารออีก {7 - (now - last_reset).days} วัน", delete_after=10)
                     return
-
-        # ลบข้อความของผู้ใช้หลังจาก 10 วินาที
-        await ctx.message.delete(delay=10)
 
         # ส่งคำขอไปยัง KeyAuth API
         keyauth_url = f"https://keyauth.win/api/seller/?sellerkey={SELLER_KEY}&type=resetuser&user={license_key}"
@@ -85,11 +51,6 @@ async def rs(ctx, license_key: str):
             await log_channel.send(embed=embed)
 
     except discord.Forbidden:
-        await ctx.send("❌ บอทไม่มีสิทธิ์ลบข้อความ", delete_after=10)
+        await ctx.send("❌ บอทไม่มีสิทธิ์ทำงานนี้ กรุณาตรวจสอบสิทธิ์", delete_after=10)
     except commands.MissingRole:
         await ctx.send("❌ คุณไม่มีสิทธิ์ใช้คำสั่งนี้", delete_after=10)
-
-
-server_on()
-
-bot.run(os.getenv('TOKEN'))
