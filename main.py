@@ -19,7 +19,7 @@ async def on_ready():
 
 
 @bot.command()
-@commands.has_role("Admin")  # แทน "Admin" ด้วยชื่อ Role ที่ต้องการ
+@commands.has_role("resetkey")  # แทน "Admin" ด้วยชื่อ Role ที่ต้องการ
 async def reset_hwid(ctx, license_key: str):
     """คำสั่ง !reset_hwid <license_key> สำหรับรีเซ็ต HWID ผ่าน KeyAuth"""
     try:
