@@ -52,6 +52,35 @@ async def rs(ctx, license_key: str):
                 if "ASST" not in [role.name for role in ctx.author.roles]:  # ตรวจสอบ Role
                     await ctx.send(f"❌ คีย์ `{license_key}` ถูกรีเซ็ตไปแล้ว กรุณารออีก {7 - (now - last_reset).days} วัน", delete_after=10)
                     return
+@bot.command()
+@commands.has_role("resetkey")  # ให้เฉพาะ Role "resetkey" ใช้คำสั่งนี้ได้
+async def rs(ctx, license_key: str):
+    """คำสั่ง !rs <license_key> สำหรับรีเซ็ต HWID ผ่าน KeyAuth"""
+    try:
+        # ลบข้อความของผู้ใช้
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            await ctx.send("❌ บอทไม่มีสิทธิ์ลบข้อความของคุณ!", delete_after=10)
+
+        # ส่งคำขอไปยัง KeyAuth API
+        keyauth_url = f"https://keyauth.win/api/seller/?sellerkey={SELLER_KEY}&type=resetuser&user={license_key}"
+        response = requests.get(keyauth_url)
+        result = response.json()
+
+        if result.get("success"):
+            message = f"✅ รีเซ็ต HWID ของ `{license_key}` สำเร็จ!"
+        else:
+            message = f"❌ ล้มเหลว: {result.get('message', 'Unknown error')}"
+
+        # ส่งข้อความบอท และลบหลัง 10 วินาที
+        msg = await ctx.send(message)
+        await msg.delete(delay=10)
+
+    except discord.Forbidden:
+        await ctx.send("❌ บอทไม่มีสิทธิ์ทำงานนี้", delete_after=10)
+    except commands.MissingRole:
+        await ctx.send("❌ คุณไม่มีสิทธิ์ใช้คำสั่งนี้", delete_after=10)
 
         # ลบข้อความของผู้ใช้หลังจาก 10 วินาที
         await ctx.message.delete(delay=10)
