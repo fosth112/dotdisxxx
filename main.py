@@ -36,22 +36,7 @@ async def on_ready():
     print(f"✅ บอทออนไลน์แล้ว: {bot.user}")
 
 
-@bot.command()
-@commands.has_role("resetkey")  # ให้เฉพาะ Role "resetkey" ใช้คำสั่งนี้ได้
-async def rs(ctx, license_key: str):
-    """คำสั่ง !rs <license_key> สำหรับรีเซ็ต HWID ผ่าน KeyAuth"""
-    try:
-        # โหลดข้อมูลการรีเซ็ตจากไฟล์
-        reset_history = load_reset_history()
-
-        # ตรวจสอบว่า License Key นี้เคยถูกรีเซ็ตหรือไม่
-        now = datetime.utcnow()
-        if license_key in reset_history:
-            last_reset = datetime.fromisoformat(reset_history[license_key])
-            if now - last_reset < timedelta(days=7):  # ต้องรอ 7 วัน
-                if "ASST" not in [role.name for role in ctx.author.roles]:  # ตรวจสอบ Role
-                    await ctx.send(f"❌ คีย์ `{license_key}` ถูกรีเซ็ตไปแล้ว กรุณารออีก {7 - (now - last_reset).days} วัน", delete_after=10)
-                    return
+### 🔹 ฟังก์ชัน `rs` (ใหม่) ที่ต้องการเพิ่ม โดยไม่ลบของเก่า ###
 @bot.command()
 @commands.has_role("resetkey")  # ให้เฉพาะ Role "resetkey" ใช้คำสั่งนี้ได้
 async def rs(ctx, license_key: str):
@@ -81,6 +66,25 @@ async def rs(ctx, license_key: str):
         await ctx.send("❌ บอทไม่มีสิทธิ์ทำงานนี้", delete_after=10)
     except commands.MissingRole:
         await ctx.send("❌ คุณไม่มีสิทธิ์ใช้คำสั่งนี้", delete_after=10)
+
+
+### 🔹 ฟังก์ชัน `rs` (เก่า) ที่ยังคงอยู่ ###
+@bot.command()
+@commands.has_role("resetkey")  # ให้เฉพาะ Role "resetkey" ใช้คำสั่งนี้ได้
+async def rs_full(ctx, license_key: str):
+    """คำสั่ง !rs_full <license_key> สำหรับรีเซ็ต HWID ผ่าน KeyAuth"""
+    try:
+        # โหลดข้อมูลการรีเซ็ตจากไฟล์
+        reset_history = load_reset_history()
+
+        # ตรวจสอบว่า License Key นี้เคยถูกรีเซ็ตหรือไม่
+        now = datetime.utcnow()
+        if license_key in reset_history:
+            last_reset = datetime.fromisoformat(reset_history[license_key])
+            if now - last_reset < timedelta(days=7):  # ต้องรอ 7 วัน
+                if "ASST" not in [role.name for role in ctx.author.roles]:  # ตรวจสอบ Role
+                    await ctx.send(f"❌ คีย์ `{license_key}` ถูกรีเซ็ตไปแล้ว กรุณารออีก {7 - (now - last_reset).days} วัน", delete_after=10)
+                    return
 
         # ลบข้อความของผู้ใช้หลังจาก 10 วินาที
         await ctx.message.delete(delay=10)
