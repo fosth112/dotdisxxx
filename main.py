@@ -83,7 +83,15 @@ async def rs(ctx, license_key: str):
         # ส่งข้อความบอท และลบหลัง 10 วินาที
         msg = await ctx.send(message)
         await msg.delete(delay=10)
-
+log_channel = bot.get_channel(LOG_CHANNEL_ID)
+        if log_channel:
+            embed = discord.Embed(title="📋 Log การใช้งานรีเซ็ต HWID", color=0x00ff00)
+            embed.add_field(name="👤 ผู้ใช้งาน", value=f"{ctx.author.name}#{ctx.author.discriminator} ({ctx.author.id})", inline=False)
+            embed.add_field(name="🔑 License Key", value=license_key, inline=False)
+            embed.add_field(name="📅 เวลาที่ใช้คำสั่ง", value=discord.utils.format_dt(ctx.message.created_at, style="F"), inline=False)
+            embed.add_field(name="📌 สถานะ", value=status, inline=False)
+            await log_channel.send(embed=embed)
+            
     except discord.Forbidden:
         await ctx.send("❌ บอทไม่มีสิทธิ์ทำงานนี้", delete_after=10)
     except commands.MissingRole:
