@@ -37,7 +37,7 @@ async def on_ready():
     print(f"✅ บอทออนไลน์แล้ว: {bot.user}")
 
 
-### 🔹 คำสั่ง `!rs` ที่จะลบข้อความของผู้ใช้แม้รีไม่สำเร็จ ###
+### 🔹 คำสั่ง `!rs` ที่เพิ่มระบบ Log ###
 @bot.command()
 @commands.has_role("resetkey")
 async def rs(ctx, license_key: str):
@@ -73,25 +73,29 @@ async def rs(ctx, license_key: str):
         result = response.json()
 
         if result.get("success"):
+            status = "✅ สำเร็จ"
             message = f"✅ รีเซ็ต HWID ของ `{license_key}` สำเร็จ!"
             reset_history[license_key] = now.isoformat()  # บันทึกเวลารีเซ็ต (ยกเว้นคนที่มี Role พิเศษ)
             if not has_unlimited_role:
                 save_reset_history(reset_history)  # บันทึกลงไฟล์ถ้าไม่ใช่ Role พิเศษ
         else:
+            status = f"❌ ล้มเหลว: {result.get('message', 'Unknown error')}"
             message = f"❌ ล้มเหลว: {result.get('message', 'Unknown error')}"
 
         # ส่งข้อความบอท และลบหลัง 10 วินาที
         msg = await ctx.send(message)
         await msg.delete(delay=10)
-log_channel = bot.get_channel(LOG_CHANNEL_ID)
+
+        # 📋 ส่ง Log ไปยังช่องที่กำหนด
+        log_channel = bot.get_channel(LOG_CHANNEL_ID)
         if log_channel:
-            embed = discord.Embed(title="📋 Log การใช้งานรีเซ็ต HWID", color=0x00ff00)
+            embed = discord.Embed(title="📋 Log การรีเซ็ต HWID", color=0x00ff00 if result.get("success") else 0xff0000)
             embed.add_field(name="👤 ผู้ใช้งาน", value=f"{ctx.author.name}#{ctx.author.discriminator} ({ctx.author.id})", inline=False)
             embed.add_field(name="🔑 License Key", value=license_key, inline=False)
-            embed.add_field(name="📅 เวลาที่ใช้คำสั่ง", value=discord.utils.format_dt(ctx.message.created_at, style="F"), inline=False)
+            embed.add_field(name="📅 เวลาที่ใช้คำสั่ง", value=discord.utils.format_dt(now, style="F"), inline=False)
             embed.add_field(name="📌 สถานะ", value=status, inline=False)
             await log_channel.send(embed=embed)
-            
+
     except discord.Forbidden:
         await ctx.send("❌ บอทไม่มีสิทธิ์ทำงานนี้", delete_after=10)
     except commands.MissingRole:
